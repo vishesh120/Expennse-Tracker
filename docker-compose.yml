@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: expensetracker_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ai_expense_tracker
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: expensetracker_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - ENVIRONMENT=production
+      - MONGODB_URL=mongodb://mongodb:27017
+      - DATABASE_NAME=ai_expense_tracker
+      - USE_MOCK_DB=false
+      - JWT_SECRET_KEY=change_this_to_a_long_random_secret_key_in_production_32_chars
+      - JWT_REFRESH_SECRET_KEY=change_this_to_another_long_random_refresh_key_32_chars
+      - CORS_ORIGINS=["http://localhost", "http://localhost:80", "http://localhost:5173"]
+    depends_on:
+      - mongodb
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: expensetracker_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
